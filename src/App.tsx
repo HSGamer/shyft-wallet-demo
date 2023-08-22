@@ -3,7 +3,10 @@ import { ConnectionProvider, WalletProvider } from '@solana/wallet-adapter-react
 import { WalletModalProvider, WalletMultiButton } from '@solana/wallet-adapter-react-ui';
 import { UnsafeBurnerWalletAdapter } from '@solana/wallet-adapter-wallets';
 import { clusterApiUrl } from '@solana/web3.js';
-import React, { FC, ReactNode, useMemo } from 'react';
+import React, { FC, ReactNode, useMemo, useState, useEffect } from 'react';
+import { useWallet } from '@solana/wallet-adapter-react';
+
+import { ShyftSdk, Network } from '@shyft-to/js';
 
 require('./App.css');
 require('@solana/wallet-adapter-react-ui/styles.css');
@@ -54,9 +57,27 @@ const Context: FC<{ children: ReactNode }> = ({ children }) => {
 };
 
 const Content: FC = () => {
+    const { publicKey } = useWallet();
+    const shyft = new ShyftSdk({ apiKey: "API_KEY", network: Network.Devnet });
+    const [ balance, setBalance ] = useState<number>(-1);
+
+    useEffect(() => {
+        const fetchBalance = async () => {
+            const bal = await shyft.wallet.getBalance({ wallet: publicKey!.toBase58() });
+            setBalance(bal);
+        };
+
+        fetchBalance().catch(console.error);
+    }, [shyft.wallet, publicKey]);
+
     return (
         <div className="App">
             <WalletMultiButton />
+            {
+            !publicKey 
+                ? <p>Not Connected</p> 
+                : <p>Balance: {balance}</p>
+            }
         </div>
     );
 };
